@@ -1,29 +1,19 @@
-import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import React, { useState } from 'react';
 
-const TodoList = () => {
-  const [todos, setTodos] = useState([]);
+const TodoList = ({ todos, onUpdate, onDelete, onRefresh }) => {
   const [editingId, setEditingId] = useState(null);
   const [editTitle, setEditTitle] = useState('');
   const [editDescription, setEditDescription] = useState('');
 
-  useEffect(() => {
-    fetchTodos();
-  }, []);
-
-  const fetchTodos = async () => {
-    try {
-      const response = await axios.get('http://localhost:5000/api/todos');
-      setTodos(response.data);
-    } catch (error) {
-      console.error('Error fetching todos:', error);
-    }
-  };
-
   const handleDelete = async (id) => {
     try {
-      await axios.delete(`http://localhost:5000/api/todos/${id}`);
-      fetchTodos();
+      const response = await fetch(`http://localhost:5000/api/todos/${id}`, {
+        method: 'DELETE'
+      });
+      
+      if (response.ok) {
+        onDelete(id);
+      }
     } catch (error) {
       console.error('Error deleting todo:', error);
     }
@@ -31,10 +21,20 @@ const TodoList = () => {
 
   const handleToggleComplete = async (id, currentStatus) => {
     try {
-      await axios.put(`http://localhost:5000/api/todos/${id}`, {
-        completed: !currentStatus
+      const response = await fetch(`http://localhost:5000/api/todos/${id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          completed: !currentStatus
+        })
       });
-      fetchTodos();
+      
+      if (response.ok) {
+        const updatedTodo = await response.json();
+        onUpdate(updatedTodo);
+      }
     } catch (error) {
       console.error('Error updating todo:', error);
     }
@@ -54,87 +54,115 @@ const TodoList = () => {
 
   const handleUpdate = async (id) => {
     try {
-      await axios.put(`http://localhost:5000/api/todos/${id}`, {
-        title: editTitle,
-        description: editDescription
+      const response = await fetch(`http://localhost:5000/api/todos/${id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          title: editTitle,
+          description: editDescription
+        })
       });
-      fetchTodos();
-      cancelEditing();
+      
+      if (response.ok) {
+        const updatedTodo = await response.json();
+        onUpdate(updatedTodo);
+        cancelEditing();
+      }
     } catch (error) {
       console.error('Error updating todo:', error);
     }
   };
 
   return (
-    <div className="list-group">
-      {todos.map((todo) => (
-        <div
-          key={todo.id}
-          className={`list-group-item ${todo.completed ? 'list-group-item-secondary' : ''}`}
-        >
-          {editingId === todo.id ? (
-            <div className="mb-3">
-              <input
-                type="text"
-                className="form-control mb-2"
-                value={editTitle}
-                onChange={(e) => setEditTitle(e.target.value)}
-              />
-              <textarea
-                className="form-control mb-2"
-                value={editDescription}
-                onChange={(e) => setEditDescription(e.target.value)}
-              />
-              <div className="d-flex justify-content-end">
-                <button
-                  className="btn btn-sm btn-outline-secondary me-2"
-                  onClick={cancelEditing}
-                >
-                  Cancel
-                </button>
-                <button
-                  className="btn btn-sm btn-primary"
-                  onClick={() => handleUpdate(todo.id)}
-                >
-                  Save
-                </button>
-              </div>
-            </div>
-          ) : (
-            <div className="d-flex justify-content-between align-items-center">
-              <div>
-                <h5 className={`mb-1 ${todo.completed ? 'text-decoration-line-through' : ''}`}>
-                  {todo.title}
-                </h5>
-                <p className="mb-1 text-muted">{todo.description}</p>
-              </div>
-              <div>
-                <div className="form-check form-check-inline">
+    <div>
+      <div className="d-flex justify-content-between align-items-center mb-3">
+        <h2>Your Tasks</h2>
+        <button className="btn btn-sm btn-outline-secondary" onClick={onRefresh}>
+          Refresh
+        </button>
+      </div>
+      
+      {todos.length === 0 ? (
+        <p className="text-center text-muted">No tasks yet. Add a task to get started!</p>
+      ) : (
+        <div className="list-group">
+          {todos.map((todo) => (
+            <div
+              key={todo.id}
+              className={`list-group-item ${todo.completed ? 'list-group-item-secondary' : ''}`}
+            >
+              {editingId === todo.id ? (
+                <div className="mb-3">
                   <input
-                    className="form-check-input"
-                    type="checkbox"
-                    checked={todo.completed}
-                    onChange={() => handleToggleComplete(todo.id, todo.completed)}
+                    type="text"
+                    className="form-control mb-2"
+                    value={editTitle}
+                    onChange={(e) => setEditTitle(e.target.value)}
                   />
-                  <label className="form-check-label">Completed</label>
+                  <textarea
+                    className="form-control mb-2"
+                    value={editDescription}
+                    onChange={(e) => setEditDescription(e.target.value)}
+                  />
+                  <div className="d-flex justify-content-end">
+                    <button
+                      className="btn btn-sm btn-outline-secondary me-2"
+                      onClick={cancelEditing}
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      className="btn btn-sm btn-primary"
+                      onClick={() => handleUpdate(todo.id)}
+                    >
+                      Save
+                    </button>
+                  </div>
                 </div>
-                <button
-                  className="btn btn-sm btn-outline-primary me-2"
-                  onClick={() => startEditing(todo)}
-                >
-                  Edit
-                </button>
-                <button
-                  className="btn btn-sm btn-outline-danger"
-                  onClick={() => handleDelete(todo.id)}
-                >
-                  Delete
-                </button>
-              </div>
+              ) : (
+                <div className="d-flex justify-content-between align-items-center">
+                  <div>
+                    <h5 className={`mb-1 ${todo.completed ? 'text-decoration-line-through' : ''}`}>
+                      {todo.title}
+                    </h5>
+                    {todo.description && (
+                      <p className="mb-1 text-muted">{todo.description}</p>
+                    )}
+                    <small className="text-muted">
+                      Created: {new Date(todo.createdAt).toLocaleDateString()}
+                    </small>
+                  </div>
+                  <div>
+                    <div className="form-check form-check-inline">
+                      <input
+                        className="form-check-input"
+                        type="checkbox"
+                        checked={todo.completed}
+                        onChange={() => handleToggleComplete(todo.id, todo.completed)}
+                      />
+                      <label className="form-check-label">Completed</label>
+                    </div>
+                    <button
+                      className="btn btn-sm btn-outline-primary me-2"
+                      onClick={() => startEditing(todo)}
+                    >
+                      Edit
+                    </button>
+                    <button
+                      className="btn btn-sm btn-outline-danger"
+                      onClick={() => handleDelete(todo.id)}
+                    >
+                      Delete
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
-          )}
+          ))}
         </div>
-      ))}
+      )}
     </div>
   );
 };

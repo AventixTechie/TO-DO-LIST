@@ -1,38 +1,38 @@
-// import logo from './logo.svg';
-// import './App.css';
-
-// function App() {
-//   return (
-//     <div className="App">
-//       <header className="App-header">
-//         <img src={logo} className="App-logo" alt="logo" />
-//         <p>
-//           Edit <code>src/App.js</code> and save to reload.
-//         </p>
-//         <a
-//           className="App-link"
-//           href="https://reactjs.org"
-//           target="_blank"
-//           rel="noopener noreferrer"
-//         >
-//           Learn React
-//         </a>
-//       </header>
-//     </div>
-//   );
-// }
-
-// export default App;
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import TodoForm from './components/TodoForm';
 import TodoList from './components/TodoList';
 import 'bootstrap/dist/css/bootstrap.min.css';
+import './App.css';
 
 function App() {
   const [todos, setTodos] = useState([]);
 
+  useEffect(() => {
+    fetchTodos();
+  }, []);
+
+  const fetchTodos = async () => {
+    try {
+      const response = await fetch('http://localhost:5000/api/todos');
+      const data = await response.json();
+      setTodos(data);
+    } catch (error) {
+      console.error('Error fetching todos:', error);
+    }
+  };
+
   const handleAddTodo = (newTodo) => {
     setTodos([...todos, newTodo]);
+  };
+
+  const handleUpdateTodo = (updatedTodo) => {
+    setTodos(todos.map(todo => 
+      todo.id === updatedTodo.id ? updatedTodo : todo
+    ));
+  };
+
+  const handleDeleteTodo = (id) => {
+    setTodos(todos.filter(todo => todo.id !== id));
   };
 
   return (
@@ -41,7 +41,12 @@ function App() {
       <div className="row justify-content-center">
         <div className="col-md-8">
           <TodoForm onAdd={handleAddTodo} />
-          <TodoList />
+          <TodoList 
+            todos={todos} 
+            onUpdate={handleUpdateTodo}
+            onDelete={handleDeleteTodo}
+            onRefresh={fetchTodos}
+          />
         </div>
       </div>
     </div>

@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import axios from 'axios';
 
 const TodoForm = ({ onAdd }) => {
   const [title, setTitle] = useState('');
@@ -10,13 +9,23 @@ const TodoForm = ({ onAdd }) => {
     if (!title.trim()) return;
 
     try {
-      const response = await axios.post('http://localhost:5000/api/todos', {
-        title,
-        description
+      const response = await fetch('http://localhost:5000/api/todos', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          title,
+          description
+        })
       });
-      onAdd(response.data);
-      setTitle('');
-      setDescription('');
+      
+      if (response.ok) {
+        const newTodo = await response.json();
+        onAdd(newTodo);
+        setTitle('');
+        setDescription('');
+      }
     } catch (error) {
       console.error('Error adding todo:', error);
     }
@@ -31,6 +40,7 @@ const TodoForm = ({ onAdd }) => {
           placeholder="Title"
           value={title}
           onChange={(e) => setTitle(e.target.value)}
+          required
         />
       </div>
       <div className="mb-3">
