@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import Swal from 'sweetalert2';
 
 const TodoList = ({ todos, onUpdate, onDelete, onRefresh }) => {
   const [editingId, setEditingId] = useState(null);
@@ -6,18 +7,37 @@ const TodoList = ({ todos, onUpdate, onDelete, onRefresh }) => {
   const [editDescription, setEditDescription] = useState('');
 
   const handleDelete = async (id) => {
-    try {
-      const response = await fetch(`http://localhost:5000/api/todos/${id}`, {
-        method: 'DELETE'
-      });
-      
-      if (response.ok) {
-        onDelete(id);
-      }
-    } catch (error) {
-      console.error('Error deleting todo:', error);
+  const result = await Swal.fire({
+    title: 'Are you sure?',
+    text: "This task will be permanently deleted!",
+    icon: 'warning',
+    showCancelButton: true,
+    confirmButtonColor: '#d33',
+    cancelButtonColor: '#3085d6',
+    confirmButtonText: 'Yes, delete it!',
+    cancelButtonText: 'Cancel'
+  });
+
+  if (!result.isConfirmed) return;
+
+  try {
+    const response = await fetch(`http://localhost:5000/api/todos/${id}`, {
+      method: 'DELETE',
+      credentials: 'include'
+    });
+
+    if (response.ok) {
+      Swal.fire('Deleted!', 'Your task has been deleted.', 'success');
+      onDelete(id);
+    } else if (response.status === 401) {
+      Swal.fire('Unauthorized', 'Please log in to delete tasks.', 'error');
     }
-  };
+  } catch (error) {
+    console.error('Error deleting todo:', error);
+    Swal.fire('Error', 'Something went wrong while deleting.', 'error');
+  }
+};
+
 
   const handleToggleComplete = async (id, currentStatus) => {
     try {
@@ -26,6 +46,7 @@ const TodoList = ({ todos, onUpdate, onDelete, onRefresh }) => {
         headers: {
           'Content-Type': 'application/json',
         },
+        credentials: 'include',
         body: JSON.stringify({
           completed: !currentStatus
         })
@@ -34,6 +55,8 @@ const TodoList = ({ todos, onUpdate, onDelete, onRefresh }) => {
       if (response.ok) {
         const updatedTodo = await response.json();
         onUpdate(updatedTodo);
+      } else if (response.status === 401) {
+        alert('Please log in to update tasks');
       }
     } catch (error) {
       console.error('Error updating todo:', error);
@@ -59,6 +82,7 @@ const TodoList = ({ todos, onUpdate, onDelete, onRefresh }) => {
         headers: {
           'Content-Type': 'application/json',
         },
+        credentials: 'include',
         body: JSON.stringify({
           title: editTitle,
           description: editDescription
@@ -69,6 +93,8 @@ const TodoList = ({ todos, onUpdate, onDelete, onRefresh }) => {
         const updatedTodo = await response.json();
         onUpdate(updatedTodo);
         cancelEditing();
+      } else if (response.status === 401) {
+        alert('Please log in to update tasks');
       }
     } catch (error) {
       console.error('Error updating todo:', error);
@@ -168,3 +194,29 @@ const TodoList = ({ todos, onUpdate, onDelete, onRefresh }) => {
 };
 
 export default TodoList;
+
+
+
+
+
+// Explanation:
+
+// Create a component to display the list of todos
+
+// Manage state for editing todos
+
+// Handle delete operation with a DELETE request
+
+// Handle toggle complete status with a PUT request
+
+// Functions to start and cancel editing
+
+// Handle update operation with a PUT request
+
+// Render the list of todos with conditional rendering for edit mode
+
+// Show appropriate UI based on whether todos exist or not
+
+// Display each todo with its title, description, and creation date
+
+// Provide buttons to edit, delete, and mark todos as complete

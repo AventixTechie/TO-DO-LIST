@@ -14,6 +14,7 @@ const TodoForm = ({ onAdd }) => {
         headers: {
           'Content-Type': 'application/json',
         },
+        credentials: 'include',
         body: JSON.stringify({
           title,
           description
@@ -25,6 +26,8 @@ const TodoForm = ({ onAdd }) => {
         onAdd(newTodo);
         setTitle('');
         setDescription('');
+      } else if (response.status === 401) {
+        alert('Please log in to add tasks');
       }
     } catch (error) {
       console.error('Error adding todo:', error);
@@ -59,3 +62,20 @@ const TodoForm = ({ onAdd }) => {
 };
 
 export default TodoForm;
+
+
+
+
+// Explanation:
+
+// Create a form component with state for title and description
+
+// Handle form submission with preventDefault to avoid page reload
+
+// Validate that title is not empty
+
+// Send POST request to create a new todo
+
+// If successful, call the onAdd callback and reset form fields
+
+// Render a form with input fields and a submit button
