@@ -126,7 +126,7 @@ function App() {
       {user ? (
         <>
           <div className="d-flex justify-content-between align-items-center mb-4">
-            <h1 className="text-center mb-0">Todo List</h1>
+            <h1 className="text-center mb-0">My Todo List</h1>
             <div className="d-flex align-items-center">
               <span className="me-3">Hello, {user.displayName}</span>
               <button className="btn btn-outline-secondary btn-sm" onClick={handleLogout}>
